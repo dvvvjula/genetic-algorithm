@@ -40,7 +40,7 @@ int compareFitness(const void *a, const void *b);
 // check if sudoku solution is complete and correct
 int isSolved(int *genes, int size);
 
-void solveWithGenetic(int **puzzle, int size, int selectionMethod)
+void solveWithGenetic(int **puzzle, int size, int selectionMethod, int crossoverMethod, int mutationMethod)
 {
     int chromosomeLength = size * size;
     Population *population = malloc(sizeof(Population));
@@ -99,20 +99,29 @@ void solveWithGenetic(int **puzzle, int size, int selectionMethod)
             else
             {
                 // simple crossover without print: randomly select gene from either parent
-                for (int k = 0; k < chromosomeLength; k++)
+                if (crossoverMethod == CROSSOVER_ONE_POINT)
+                    crossoverOnePoint(parent1->genes, parent2->genes, newPop->individuals[i]->genes, chromosomeLength);
+                else if (crossoverMethod == CROSSOVER_TWO_POINT)
+                    crossoverTwoPoint(parent1->genes, parent2->genes, newPop->individuals[i]->genes, chromosomeLength);
+                else
                 {
-                    int choose = rand() % 2;
-                    if (choose == 1)
-                        newPop->individuals[i]->genes[k] = parent1->genes[k];
-                    else
-                        newPop->individuals[i]->genes[k] = parent2->genes[k];
+                    for (int k = 0; k < chromosomeLength; k++)
+                    {
+                        int choose = rand() % 2;
+                        newPop->individuals[i]->genes[k] = (choose ? parent1->genes[k] : parent2->genes[k]);
+                    }
                 }
             }
 
             // mutate child with some probability
             if ((rand() / (double)RAND_MAX) < MUTATION_RATE)
             {
-                mutate(newPop->individuals[i]->genes, size);
+                if (mutationMethod == MUTATION_INVERSION)
+                    mutateInversion(newPop->individuals[i]->genes, size);
+                else if (mutationMethod == MUTATION_RANDOM_RESET)
+                    mutateRandomReset(newPop->individuals[i]->genes, size);
+                else
+                    mutate(newPop->individuals[i]->genes, size); // default swap
             }
 
             // calculate fitness for child
@@ -193,6 +202,33 @@ void mutate(int *genes, int size)
     genes[j] = temp;
 }
 
+void mutateInversion(int *genes, int size)
+{
+    int len = size * size;
+    int i = rand() % len;
+    int j = rand() % len;
+    if (i > j)
+    {
+        int tmp = i;
+        i = j;
+        j = tmp;
+    }
+    while (i < j)
+    {
+        int tmp = genes[i];
+        genes[i] = genes[j];
+        genes[j] = tmp;
+        i++;
+        j--;
+    }
+}
+
+void mutateRandomReset(int *genes, int size)
+{
+    int i = rand() % (size * size);
+    genes[i] = (rand() % size) + 1;
+}
+
 // perform crossover with a random mask and print detailed info for debugging
 void crossover(int *parent1, int *parent2, int *child, int size, int generation, int index, int selectionMethod)
 {
@@ -257,6 +293,34 @@ void crossover(int *parent1, int *parent2, int *child, int size, int generation,
             printf(" ");
     }
     printf("]\n");
+}
+
+void crossoverOnePoint(int *p1, int *p2, int *child, int length)
+{
+    int point = rand() % length;
+    for (int i = 0; i < point; i++)
+        child[i] = p1[i];
+    for (int i = point; i < length; i++)
+        child[i] = p2[i];
+}
+
+void crossoverTwoPoint(int *p1, int *p2, int *child, int length)
+{
+    int p1_idx = rand() % length;
+    int p2_idx = rand() % length;
+    if (p1_idx > p2_idx)
+    {
+        int tmp = p1_idx;
+        p1_idx = p2_idx;
+        p2_idx = tmp;
+    }
+    for (int i = 0; i < length; i++)
+    {
+        if (i < p1_idx || i > p2_idx)
+            child[i] = p1[i];
+        else
+            child[i] = p2[i];
+    }
 }
 
 // select a parent based on selection method

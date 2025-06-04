@@ -18,14 +18,14 @@ int main()
     printf("\nInitial Sudoku Puzzle:\n");
     printSudoku(sudoku, size);
 
-    printf("\nSolving using Roulette Selection:\n");
-    solveWithGenetic(sudoku, size, ROULETTE);
+    printf("\nSolving using roulette selection:\n");
+    solveWithGenetic(sudoku, size, ROULETTE, 1, 1); // one-point crossover, inversion mutation
 
-    printf("\nSolving using Tournament Selection:\n");
-    solveWithGenetic(sudoku, size, TOURNAMENT);
+    printf("\nSolving using tournament selection:\n");
+    solveWithGenetic(sudoku, size, TOURNAMENT, 2, 2); // two-point crossover, random reset mutation
 
-    printf("\nSolving using Rank Selection:\n");
-    solveWithGenetic(sudoku, size, RANK);
+    printf("\nSolving using rank selection:\n");
+    solveWithGenetic(sudoku, size, RANK, 1, 2); // one-point crossover, random reset mutation
 
     freeSudoku(sudoku, size);
     return 0;
